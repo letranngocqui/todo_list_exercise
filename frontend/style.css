@@ -1,0 +1,36 @@
+/* frontend/style.css */
+body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
+#auth-container, #task-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; }
+#task-container { height: 80vh; display: flex; flex-direction: column; width: 600px; }
+input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; }
+
+/* CSS Yêu cầu: Nút đè lên nhau, bo viền */
+.btn-group { display: flex; flex-direction: column; position: relative; margin-top: 20px; height: 120px;}
+button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold; border: none; transition: 0.3s; }
+.active-btn { background: #007bff; color: white; border: 2px solid #0056b3; z-index: 2; position: absolute; width: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.2);}
+.secondary-btn { background: #e0e0e0; color: #333; z-index: 1; position: absolute; width: 90%; top: 60px; left: 5%; }
+
+#error-msg { color: red; font-size: 13px; margin-bottom: 10px; }
+
+/* Task CSS */
+.header-task { flex: 0 0 30%; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+.task-input-group { display: flex; gap: 10px; }
+.body-task { flex: 1; overflow-y: auto; padding-top: 10px; }
+
+/* Thẻ Task */
+.task-card { display: flex; align-items: center; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.bullet { width: 10px; height: 10px; background: #28a745; border-radius: 50%; margin-right: 10px; }
+.task-name { flex: 1; cursor: pointer; font-weight: bold; }
+.action-icons { display: flex; gap: 10px; }
+.action-icons button { padding: 5px 10px; font-size: 12px; border-radius: 4px;}
+.btn-assign { background: #17a2b8; color: white; }
+.btn-edit { background: #ffc107; }
+.btn-delete { background: #dc3545; color: white; }
+
+/* Modal */
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+.modal-content { background: white; margin: 10% auto; padding: 20px; width: 300px; border-radius: 8px; max-height: 400px; overflow-y: auto; }
+.close { float: right; font-size: 24px; cursor: pointer; }
+#user-list { list-style: none; padding: 0; }
+#user-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+#user-list li:hover { background: #f1f1f1; }

@@ -1,0 +1,50 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo List Hệ Thống</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- MÀN HÌNH AUTH -->
+    <div id="auth-container">
+        <h1>Todo List</h1>
+        <div id="error-msg"></div>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+
+        <div class="btn-group">
+            <button id="btn-login" class="active-btn">Login</button>
+            <button id="btn-signup" class="secondary-btn">Sign Up</button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH TASK -->
+    <div id="task-container" style="display: none;">
+        <div class="header-task">
+            <h2>TASK</h2>
+            <div class="task-input-group">
+                <input type="text" id="task-name" placeholder="Nhập tên task..." style="width: 70%;">
+                <button onclick="addTask()">Add</button>
+            </div>
+        </div>
+
+        <div class="body-task" id="task-list">
+            <!-- Render tasks ở đây -->
+        </div>
+    </div>
+
+    <!-- MODAL ASSIGN USER -->
+    <div id="assign-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Assign User</h3>
+            <input type="text" id="search-user" placeholder="Tìm email..." onkeyup="searchUsers()">
+            <ul id="user-list"></ul>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

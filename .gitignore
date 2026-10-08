@@ -1,0 +1,12 @@
+# Bỏ qua thư mục chứa các thư viện Node.js (vì nó rất nặng và có thể tạo lại bằng lệnh npm install)
+backend/node_modules/
+
+# Bỏ qua file chứa mật khẩu, khóa bí mật (cực kỳ quan trọng để bảo mật)
+backend/.env
+
+# Bỏ qua các file database để không đẩy dữ liệu cục bộ/dữ liệu lớn lên mạng
+backend/database.csv
+backend/task.csv
+
+# Bỏ qua file thực thi của ngrok
+ngrok.exe
