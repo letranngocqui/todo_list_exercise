@@ -23,7 +23,10 @@
     <!-- MÀN HÌNH TASK -->
     <div id="task-container" style="display: none;">
         <div class="header-task">
-            <h2>TASK</h2>
+            <div class="header-row">
+                <h2>TASK</h2>
+                <button id="btn-logout" onclick="logout()">Logout</button>
+            </div>
             <div class="task-input-group">
                 <input type="text" id="task-name" placeholder="Nhập tên task..." style="width: 70%;">
                 <button onclick="addTask()">Add</button>
@@ -42,6 +45,7 @@
             <h3>Assign User</h3>
             <input type="text" id="search-user" placeholder="Tìm email..." onkeyup="searchUsers()">
             <ul id="user-list"></ul>
+            <button id="load-more-btn" onclick="loadMoreUsers()" style="display: none;">Xem thêm</button>
         </div>
     </div>
 

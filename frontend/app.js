@@ -4,6 +4,9 @@ let currentMode = 'login';
 let token = localStorage.getItem('token');
 let currentAssigningTaskId = null;
 let userPage = 1;
+const USER_PAGE_SIZE = 20;   // PHẢI khớp `limit` ở backend
+let userHasMore = true;      // còn dữ liệu để load tiếp?
+let loadingUsers = false;    // chống bấm/gọi trùng khi đang tải
 
 // 1. CHUYỂN ĐỔI UI LOGIN / SIGNUP
 const btnLogin = document.getElementById('btn-login');
@@ -34,6 +37,26 @@ btnSignup.addEventListener('click', () => {
     } else {
         // Nếu đã là Sign Up rồi (nút nằm trên) -> Bấm vào thì thực hiện gửi API đăng ký
         handleAuth('signup');
+    }
+});
+
+// ===== NHẤN ENTER ĐỂ SUBMIT =====
+
+// Enter ở ô Email/Password -> submit theo tab đang chọn (Login hoặc Sign Up)
+['email', 'password'].forEach((id) => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAuth(currentMode);   // currentMode là 'login' hoặc 'signup'
+        }
+    });
+});
+
+// Enter ở ô tên task -> thêm task
+document.getElementById('task-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addTask();
     }
 });
 
@@ -79,6 +102,20 @@ function forceLogout() {
     document.getElementById('error-msg').innerText = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
 }
 
+function logout() {
+    localStorage.removeItem('token');
+    token = null;
+
+    // Quay lại màn hình đăng nhập / đăng ký
+    document.getElementById('task-container').style.display = 'none';
+    document.getElementById('auth-container').style.display = 'block';
+
+    // Dọn sạch form + báo cho người dùng
+    document.getElementById('email').value = '';
+    document.getElementById('password').value = '';
+    document.getElementById('error-msg').innerText = 'Bạn đã đăng xuất.';
+}
+
 async function loadTasks() {
     try{
       const res = await fetch(`${API_URL}/tasks`, { headers: { 'Authorization': `Bearer ${token}` }});
@@ -93,34 +130,34 @@ async function loadTasks() {
       list.innerHTML = '';
 
       tasks.forEach(t => {
-          // Thuật toán hiển thị 12 kí tự
-          const isLong = t.taskName.length > 12;
-          let shortName = isLong ? t.taskName.substring(0, 12) + '...' : t.taskName;
-          shortName = shortName
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;');
+        // Hiển thị ĐẦY ĐỦ tên task; việc thêm "..." khi tràn do CSS lo (width-based)
+        const safeFullName = t.taskName
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
 
-          const safeFullName = t.taskName
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/"/g, '&quot;')
-              .replace(/'/g, '&#39;');
-
-          // Cắt ngắn TRƯỚC rồi mới escape (nếu escape trước, cắt có thể đứt đôi entity như "&l" của "&lt;")
-          const assignLabel = t.assignEmail ? t.assignEmail.substring(0, 5) + '...' : 'Chưa có';
+          // Hiển thị ĐẦY ĐỦ email người được assign (không cắt ngắn), có escape
+          const hasAssignee = !!t.assignEmail;
+          const assignLabel = t.assignEmail || 'Chưa có';
           const safeAssignLabel = assignLabel
               .replace(/</g, '&lt;')
               .replace(/>/g, '&gt;');
 
+          // Đã assign rồi => nút assign bị vô hiệu hoá, muốn đổi phải bấm Edit
+          const assignBtnAttr = hasAssignee
+              ? 'disabled title="Đã assign — bấm Edit để đổi người nhận"'
+              : `onclick="openAssignModal('${t.taskId}')"`;
 
           const card = document.createElement('div');
           card.className = 'task-card';
           card.innerHTML = `
               <div class="bullet"></div>
               <!-- KHÔNG truyền tên task vào hàm nữa, mà giấu vào thuộc tính data-fullname -->
-              <div class="task-name" onclick="toggleTaskName(this)" data-full="false" data-fullname="${safeFullName}">${shortName}</div>
+              <div class="task-name" onclick="toggleTaskName(this)" data-full="false" title="${safeFullName}">${safeFullName}</div>
               <div class="action-icons">
-                  <button class="btn-assign" onclick="openAssignModal('${t.taskId}')">
+                  <button class="btn-assign" ${assignBtnAttr}>
                       👤 ${safeAssignLabel}
                   </button>
                   <button class="btn-edit" onclick="openAssignModal('${t.taskId}')">Edit</button>
@@ -135,17 +172,10 @@ async function loadTasks() {
 }
 
 function toggleTaskName(el) {
-    // Đọc tên đầy đủ từ thuộc tính data-fullname thay vì nhận từ tham số
-    const fullName = el.getAttribute('data-fullname');
-    const isFull = el.getAttribute('data-full') === 'true';
-
-    if (isFull) {
-        el.innerText = fullName.length > 12 ? fullName.substring(0, 12) + '...' : fullName;
-        el.setAttribute('data-full', 'false');
-    } else {
-        el.innerText = fullName;
-        el.setAttribute('data-full', 'true');
-    }
+    // Bấm để mở rộng (xuống dòng, hiện đủ) / thu gọn (1 dòng + "..." khi tràn — do CSS)
+    const nextFull = el.getAttribute('data-full') !== 'true';
+    el.setAttribute('data-full', nextFull ? 'true' : 'false');
+    el.classList.toggle('expanded', nextFull);
 }
 
 async function addTask() {
@@ -170,11 +200,12 @@ async function deleteTask(taskId) {
     loadTasks();
 }
 
-// 3. LOGIC ASSIGN VÀ MODAL (HIỂN THỊ 4 KẾT QUẢ VÀ SCROLL)
 function openAssignModal(taskId) {
     currentAssigningTaskId = taskId;
     document.getElementById('assign-modal').style.display = 'block';
+    document.getElementById('search-user').value = '';
     userPage = 1;
+    userHasMore = true;
     document.getElementById('user-list').innerHTML = '';
     fetchUsers();
 }
@@ -182,41 +213,54 @@ function openAssignModal(taskId) {
 function closeModal() { document.getElementById('assign-modal').style.display = 'none'; }
 
 async function fetchUsers(append = false) {
-    const search = document.getElementById('search-user').value;
-    const res = await fetch(`${API_URL}/users?search=${search}&page=${userPage}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const users = await res.json();
+    if (loadingUsers) return;                 // đang tải thì bỏ qua
+    if (append && !userHasMore) return;       // hết user thì thôi
+    loadingUsers = true;
 
-    const ul = document.getElementById('user-list');
-    if (!append) ul.innerHTML = '';
+    try {
+        const search = document.getElementById('search-user').value;
+        const res = await fetch(
+            `${API_URL}/users?search=${encodeURIComponent(search)}&page=${userPage}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+        );
+        const users = await res.json();
 
-    users.forEach(u => {
-        const li = document.createElement('li');
-        li.innerText = u.email;
-        li.onclick = () => assignUser(u.id);
-        ul.appendChild(li);
-    });
+        const ul = document.getElementById('user-list');
+        if (!append) ul.innerHTML = '';
+
+        users.forEach(u => {
+            const li = document.createElement('li');
+            li.innerText = u.email;
+            li.onclick = () => assignUser(u.email);
+            ul.appendChild(li);
+        });
+
+        // Trả về ít hơn 1 trang => đã hết user
+        userHasMore = users.length === USER_PAGE_SIZE;
+        document.getElementById('load-more-btn').style.display = userHasMore ? 'block' : 'none';
+    } finally {
+        loadingUsers = false;
+    }
+}
+
+// Nút "Xem thêm": sang trang kế tiếp rồi nối vào danh sách
+function loadMoreUsers() {
+    if (!userHasMore || loadingUsers) return;
+    userPage++;
+    fetchUsers(true);
 }
 
 function searchUsers() {
     userPage = 1;
+    userHasMore = true;
     fetchUsers(false);
 }
 
-// Lắng nghe sự kiện lướt để load thêm (Infinite scroll)
-document.querySelector('.modal-content').addEventListener('scroll', function() {
-    if (this.scrollTop + this.clientHeight >= this.scrollHeight - 5) {
-        userPage++;
-        fetchUsers(true);
-    }
-});
-
-async function assignUser(userId) {
+async function assignUser(email) {
     await fetch(`${API_URL}/assign-task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ taskId: currentAssigningTaskId, assignId: userId })
+        body: JSON.stringify({ taskId: currentAssigningTaskId, assignEmail: email })
     });
     closeModal();
     loadTasks();

@@ -41,14 +41,15 @@ const usersByIdMap = new Map(); // THÊM MỚI: Dùng để tra cứu bằng ID 
 const tasksList = [];
 
 // Khởi tạo file tasks nếu chưa có
-if (!fs.existsSync(taskFile)) fs.writeFileSync(taskFile, 'taskId,taskName,creatorId,assignId\n', 'utf8');
+if (!fs.existsSync(taskFile)) fs.writeFileSync(taskFile, 'taskId,taskName,creatorId,assignEmail\n', 'utf8');
 
 // Load 1 triệu users vào RAM khi khởi động server
 console.time('Load 1M Users to RAM');
-const dbContent = fs.readFileSync(dbFile, 'utf8').split('\n');
+const dbContent = fs.readFileSync(dbFile, 'utf8').split(/\r?\n/);
 for (let i = 1; i < dbContent.length; i++) {
     if (!dbContent[i]) continue;
-    const [id, email, password, status] = dbContent[i].split(',');
+    const [id, email, password, statusRaw] = dbContent[i].split(',');
+    const status = (statusRaw || '').trim();
 
     // 1. Khai báo và tạo object userObj
     const userObj = { id, email, password, status };
@@ -60,21 +61,32 @@ for (let i = 1; i < dbContent.length; i++) {
 console.timeEnd('Load 1M Users to RAM');
 
 // Load Tasks
-const taskContent = fs.readFileSync(taskFile, 'utf8').split('\n');
+const taskContent = fs.readFileSync(taskFile, 'utf8').split(/\r?\n/);
 for (let i = 1; i < taskContent.length; i++) {
     if (!taskContent[i]) continue;
-    const [taskId, taskName, creatorId, assignId] = taskContent[i].split(',');
-    tasksList.push({ taskId, taskName, creatorId, assignId });
+    const [taskId, taskName, creatorId, assignEmail] = taskContent[i].split(',');
+    tasksList.push({ taskId, taskName, creatorId, assignEmail: assignEmail || '' });
 }
 
 // Hàm ghi log user mới nhanh nhất (Append)
 function appendUser(user) {
     fs.appendFileSync(dbFile, `${user.id},${user.email},${user.password},${user.status}\n`);
 }
+
+// Ghi lại TOÀN BỘ database từ RAM — dùng khi cần SỬA một dòng (không sinh dòng trùng).
+// Duyệt usersByIdMap để mỗi user ra đúng 1 dòng (trùng cũ tự động bị gộp).
+function saveUsers() {
+    const lines = ['id,email,password,status'];
+    for (const user of usersByIdMap.values()) {
+        lines.push(`${user.id},${user.email},${user.password},${user.status}`);
+    }
+    fs.writeFileSync(dbFile, lines.join('\n') + '\n', 'utf8');
+}
+
 // Hàm lưu lại toàn bộ file task
 function saveTasks() {
-    let data = 'taskId,taskName,creatorId,assignId\n';
-    tasksList.forEach(t => data += `${t.taskId},${t.taskName},${t.creatorId},${t.assignId || ''}\n`);
+    let data = 'taskId,taskName,creatorId,assignEmail\n';
+    tasksList.forEach(t => data += `${t.taskId},${t.taskName},${t.creatorId},${t.assignEmail || ''}\n`);
     fs.writeFileSync(taskFile, data, 'utf8');
 }
 
@@ -217,10 +229,8 @@ const server = createServer(async (req, res) => {
                   // 1. Cập nhật trạng thái trên RAM
                   user.status = 'valid';
 
-                  // 2. LƯU XUỐNG DISK: Cứ thế gọi hàm appendUser để chèn 1 dòng mới xuống cuối file!
-                  // Dòng mới này có status là 'valid', khi server khởi động lại, vòng lặp for
-                  // sẽ đọc dòng này sau cùng và dùng Map.set() đè lên dòng 'invalid' cũ.
-                  appendUser(user);
+                  // 2. LƯU XUỐNG DISK: ghi lại file để SỬA status tại chỗ (không thêm dòng mới)
+                  saveUsers();
 
                   res.setHeader('Content-Type', 'text/html; charset=utf-8');
                   return res.end('<h1>Xác thực thành công! Bạn có thể login.</h1>');
@@ -262,7 +272,7 @@ const server = createServer(async (req, res) => {
 
           const search = (reqUrl.searchParams.get('search') || '').toLowerCase();
           const page = parseInt(reqUrl.searchParams.get('page')) || 1;
-          const limit = 4; // Chỉ load 4 email theo yêu cầu
+          const limit = 20;
 
           let results = [];
           // Lặp qua Map (với 1M data sẽ mất vài ms, nên có search)
@@ -270,7 +280,7 @@ const server = createServer(async (req, res) => {
               if (user.status === 'valid' && email.toLowerCase().includes(search)) {
                   results.push({ id: user.id, email: user.email });
               }
-              if (results.length > page * limit + limit) break; // Thoát sớm tối ưu
+              if (results.length >= page * limit) break; // đủ cho trang hiện tại
           }
 
           const paginated = results.slice((page - 1) * limit, page * limit);
@@ -283,15 +293,7 @@ const server = createServer(async (req, res) => {
       }
 
       if (req.method === 'GET' && pathname === '/api/tasks') {
-          // Gắn thêm email của người được assign để hiển thị
-          const tasksWithEmails = tasksList.map(t => {
-              // THAY THẾ TOÀN BỘ VÒNG LẶP FOR BẰNG O(1) LOOKUP
-              const assignedUser = usersByIdMap.get(t.assignId);
-              const assignEmail = assignedUser ? assignedUser.email : null;
-
-              return { ...t, assignEmail };
-          });
-          return sendJSON(200, tasksWithEmails);
+          return sendJSON(200, tasksList);
       }
 
       if (req.method === 'POST' && pathname === '/api/task') {
@@ -305,7 +307,7 @@ const server = createServer(async (req, res) => {
               return sendJSON(400, { error: 'Tên task không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
           }
 
-          const newTask = { taskId: crypto.randomUUID(), taskName, creatorId: currentUser.id, assignId: '' };
+          const newTask = { taskId: crypto.randomUUID(), taskName, creatorId: currentUser.id, assignEmail: '' };
           tasksList.push(newTask);
           saveTasks();
           return sendJSON(201, newTask);
@@ -322,19 +324,19 @@ const server = createServer(async (req, res) => {
       if (req.method === 'PATCH' && pathname === '/api/assign-task') {
           if (!currentUser) return sendJSON(401, { error: 'Vui lòng đăng nhập' });
 
-          const { taskId, assignId } = await getBody();
+          const { taskId, assignEmail } = await getBody();
 
-          if (assignId != null && /[,\r\n]/.test(assignId)) {
-              return sendJSON(400, { error: 'assignId không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
+          if (assignEmail != null && /[,\r\n]/.test(assignEmail)) {
+              return sendJSON(400, { error: 'assignEmail không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
           }
 
-          if (assignId && !usersByIdMap.has(assignId)) {
-              return sendJSON(400, { error: 'assignId không tồn tại' });
+          if (assignEmail && !usersMap.has(assignEmail)) {
+              return sendJSON(400, { error: 'assignEmail không tồn tại' });
           }
 
           const task = tasksList.find(t => t.taskId === taskId);
           if (task) {
-              task.assignId = assignId;
+              task.assignEmail = assignEmail;
               saveTasks();
               return sendJSON(200, { message: 'Gán thành công' });
           }

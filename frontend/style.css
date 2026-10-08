@@ -20,17 +20,29 @@ button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold;
 /* Thẻ Task */
 .task-card { display: flex; align-items: center; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .bullet { width: 10px; height: 10px; background: #28a745; border-radius: 50%; margin-right: 10px; }
-.task-name { flex: 1; cursor: pointer; font-weight: bold; }
-.action-icons { display: flex; gap: 10px; }
+.task-name { flex: 1; min-width: 0; cursor: pointer; font-weight: bold;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-name.expanded { white-space: normal; word-break: break-word; }
+.action-icons { display: flex; gap: 10px; flex-shrink: 0; }
 .action-icons button { padding: 5px 10px; font-size: 12px; border-radius: 4px;}
-.btn-assign { background: #17a2b8; color: white; }
+.btn-assign { background: #17a2b8; color: white; max-width: 240px; white-space: normal; word-break: break-all; text-align: left; }
+.btn-assign:disabled { background: #9bb7bd; cursor: not-allowed; opacity: 0.85; }
 .btn-edit { background: #ffc107; }
 .btn-delete { background: #dc3545; color: white; }
 
 /* Modal */
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-.modal-content { background: white; margin: 10% auto; padding: 20px; width: 300px; border-radius: 8px; max-height: 400px; overflow-y: auto; }
+.modal-content { background: white; margin: 10% auto; padding: 20px; width: 300px; border-radius: 8px; max-height: 70vh; overflow-y: auto; }
 .close { float: right; font-size: 24px; cursor: pointer; }
 #user-list { list-style: none; padding: 0; }
 #user-list li { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
 #user-list li:hover { background: #f1f1f1; }
+
+/* Nút Xem thêm dính đáy modal, luôn bấm được */
+#load-more-btn { position: sticky; bottom: 0; width: 100%; background: #007bff; color: white; margin-top: 10px; }
+
+/* Header task: TASK + nút Logout */
+.header-row { display: flex; justify-content: space-between; align-items: center; }
+.header-row h2 { margin: 0; }
+#btn-logout { padding: 6px 14px; font-size: 13px; background: #dc3545; color: white; border-radius: 6px; }
+#btn-logout:hover { background: #b02a37; }
