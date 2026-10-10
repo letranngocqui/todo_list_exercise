@@ -41,7 +41,7 @@ const usersByIdMap = new Map(); // THÊM MỚI: Dùng để tra cứu bằng ID 
 const tasksList = [];
 
 // Khởi tạo file tasks nếu chưa có
-if (!fs.existsSync(taskFile)) fs.writeFileSync(taskFile, 'taskId,taskName,creatorId,assignEmail\n', 'utf8');
+if (!fs.existsSync(taskFile)) fs.writeFileSync(taskFile, 'taskId,taskName,creatorId,assignEmail,completed\n', 'utf8');
 
 // Load 1 triệu users vào RAM khi khởi động server
 console.time('Load 1M Users to RAM');
@@ -64,8 +64,8 @@ console.timeEnd('Load 1M Users to RAM');
 const taskContent = fs.readFileSync(taskFile, 'utf8').split(/\r?\n/);
 for (let i = 1; i < taskContent.length; i++) {
     if (!taskContent[i]) continue;
-    const [taskId, taskName, creatorId, assignEmail] = taskContent[i].split(',');
-    tasksList.push({ taskId, taskName, creatorId, assignEmail: assignEmail || '' });
+    const [taskId, taskName, creatorId, assignEmail, completed] = taskContent[i].split(',');
+    tasksList.push({ taskId, taskName, creatorId, assignEmail: assignEmail || '', completed: completed === 'true' });
 }
 
 // Hàm ghi log user mới nhanh nhất (Append)
@@ -85,8 +85,8 @@ function saveUsers() {
 
 // Hàm lưu lại toàn bộ file task
 function saveTasks() {
-    let data = 'taskId,taskName,creatorId,assignEmail\n';
-    tasksList.forEach(t => data += `${t.taskId},${t.taskName},${t.creatorId},${t.assignEmail || ''}\n`);
+    let data = 'taskId,taskName,creatorId,assignEmail,completed\n';
+    tasksList.forEach(t => data += `${t.taskId},${t.taskName},${t.creatorId},${t.assignEmail || ''},${t.completed ? 'true' : 'false'}\n`);
     fs.writeFileSync(taskFile, data, 'utf8');
 }
 
@@ -307,7 +307,8 @@ const server = createServer(async (req, res) => {
               return sendJSON(400, { error: 'Tên task không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
           }
 
-          const newTask = { taskId: crypto.randomUUID(), taskName, creatorId: currentUser.id, assignEmail: '' };
+          const newTask = { taskId: crypto.randomUUID(), taskName, creatorId: currentUser.id, assignEmail: '', completed: false };
+
           tasksList.push(newTask);
           saveTasks();
           return sendJSON(201, newTask);
@@ -319,6 +320,17 @@ const server = createServer(async (req, res) => {
           if (idx !== -1) tasksList.splice(idx, 1);
           saveTasks();
           return sendJSON(200, { message: 'Đã xóa' });
+      }
+
+      if (req.method === 'PATCH' && pathname === '/api/task') {
+          const { taskId, completed } = await getBody();
+          const task = tasksList.find(t => t.taskId === taskId);
+          if (task) {
+              task.completed = !!completed;
+              saveTasks();
+              return sendJSON(200, { message: 'Cập nhật thành công' });
+          }
+          return sendJSON(404, { error: 'Không tìm thấy task' });
       }
 
       if (req.method === 'PATCH' && pathname === '/api/assign-task') {

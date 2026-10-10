@@ -19,7 +19,7 @@ button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold;
 
 /* Thẻ Task */
 .task-card { display: flex; align-items: center; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.bullet { width: 10px; height: 10px; background: #28a745; border-radius: 50%; margin-right: 10px; }
+.task-check { width: 18px; height: 18px; margin-right: 10px; cursor: pointer; flex-shrink: 0; accent-color: #28a745; }
 .task-name { flex: 1; min-width: 0; cursor: pointer; font-weight: bold;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-name.expanded { white-space: normal; word-break: break-word; }

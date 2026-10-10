@@ -153,7 +153,8 @@ async function loadTasks() {
           const card = document.createElement('div');
           card.className = 'task-card';
           card.innerHTML = `
-              <div class="bullet"></div>
+            <input type="checkbox" class="task-check" ${t.completed ? 'checked' : ''}
+                   onchange="toggleTask('${t.taskId}', this.checked)" title="Đánh dấu hoàn thành">
               <!-- KHÔNG truyền tên task vào hàm nữa, mà giấu vào thuộc tính data-fullname -->
               <div class="task-name" onclick="toggleTaskName(this)" data-full="false" title="${safeFullName}">${safeFullName}</div>
               <div class="action-icons">
@@ -198,6 +199,22 @@ async function deleteTask(taskId) {
         body: JSON.stringify({ taskId })
     });
     loadTasks();
+}
+
+async function toggleTask(taskId, isChecked) {
+    const res = await fetch(`${API_URL}/task`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskId, completed: isChecked })
+    });
+    if (res.status === 401 || res.status === 403) {
+        forceLogout();
+        return;
+    }
+    if (!res.ok) {
+        console.error('Lỗi cập nhật trạng thái task');
+        loadTasks(); // API lỗi -> render lại cho khớp dữ liệu thật
+    }
 }
 
 function openAssignModal(taskId) {
