@@ -46,3 +46,7 @@ button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold;
 .header-row h2 { margin: 0; }
 #btn-logout { padding: 6px 14px; font-size: 13px; background: #dc3545; color: white; border-radius: 6px; }
 #btn-logout:hover { background: #b02a37; }
+
+/* Modal Edit: 2 lựa chọn xếp dọc */
+#edit-menu .edit-option { display: block; width: 100%; margin-top: 10px; background: #007bff; color: white; }
+#edit-name-view button { margin-top: 10px; }

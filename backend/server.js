@@ -285,7 +285,6 @@ const server = createServer(async (req, res) => {
           return sendJSON(200, paginated);
       }
 
-      // --- API: TASKS CRUD ---
       if (!currentUser && (pathname.startsWith('/api/task'))) {
           return sendJSON(401, { error: 'Please log in.' });
       }
@@ -321,14 +320,26 @@ const server = createServer(async (req, res) => {
       }
 
       if (req.method === 'PATCH' && pathname === '/api/task') {
-          const { taskId, completed } = await getBody();
+          const { taskId, completed, taskName } = await getBody();
           const task = tasksList.find(t => t.taskId === taskId);
-          if (task) {
-              task.completed = !!completed;
-              saveTasks();
-              return sendJSON(200, { message: 'Updated successfully!' });
+          if (!task) return sendJSON(404, { error: 'Task not found.' });
+
+          // Sửa tên task (nếu client gửi lên)
+          if (taskName !== undefined) {
+              if (typeof taskName !== 'string' || taskName.trim() === '') {
+                  return sendJSON(400, { error: 'Task name must not be empty.' });
+              }
+              if (/[,\r\n]/.test(taskName)) {
+                  return sendJSON(400, { error: 'Task name must not contain commas (,) or newline characters.' });
+              }
+              task.taskName = taskName;
           }
-          return sendJSON(404, { error: 'Task not found.' });
+
+          // Cập nhật trạng thái done (nếu client gửi lên)
+          if (completed !== undefined) task.completed = !!completed;
+
+          saveTasks();
+          return sendJSON(200, { message: 'Updated successfully!' });
       }
 
       if (req.method === 'PATCH' && pathname === '/api/assign-task') {

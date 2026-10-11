@@ -49,6 +49,28 @@
         </div>
     </div>
 
+    <!-- MODAL EDIT TASK: 2 lựa chọn -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+
+            <!-- View 1: 2 lựa chọn -->
+            <div id="edit-menu">
+                <h3>Edit Task</h3>
+                <button class="edit-option" onclick="editAssigneeOption()">Edit Assignee</button>
+                <button class="edit-option" onclick="editTaskNameOption()">Edit Task Name</button>
+            </div>
+
+            <!-- View 2: ô sửa tên -->
+            <div id="edit-name-view" style="display: none;">
+                <h3>Edit Task Name</h3>
+                <input type="text" id="edit-task-name-input" placeholder="New task name...">
+                <button onclick="saveTaskName()">Save</button>
+                <button onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

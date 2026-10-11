@@ -8,6 +8,9 @@ const USER_PAGE_SIZE = 20;   // PHẢI khớp `limit` ở backend
 let userHasMore = true;      // còn dữ liệu để load tiếp?
 let loadingUsers = false;    // chống bấm/gọi trùng khi đang tải
 
+const tasksCache = {};          // taskId -> task object (lấy tên hiện tại khi sửa)
+let currentEditingTaskId = null;
+
 // 1. CHUYỂN ĐỔI UI LOGIN / SIGNUP
 const btnLogin = document.getElementById('btn-login');
 const btnSignup = document.getElementById('btn-signup');
@@ -57,6 +60,14 @@ document.getElementById('task-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         addTask();
+    }
+});
+
+// Enter ở ô đổi tên task -> lưu luôn
+document.getElementById('edit-task-name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        saveTaskName();
     }
 });
 
@@ -130,6 +141,7 @@ async function loadTasks() {
       list.innerHTML = '';
 
       tasks.forEach(t => {
+        tasksCache[t.taskId] = t;
         // Hiển thị ĐẦY ĐỦ tên task
         const safeFullName = t.taskName
             .replace(/&/g, '&amp;')
@@ -145,10 +157,9 @@ async function loadTasks() {
               .replace(/</g, '&lt;')
               .replace(/>/g, '&gt;');
 
-          // Đã assign rồi => nút assign bị vô hiệu hoá, muốn đổi phải bấm Edit
-          const assignBtnAttr = hasAssignee
-              ? 'disabled title="Assigned — click Edit to change the assignee."'
-              : `onclick="openAssignModal('${t.taskId}')"`;
+          // Có assignee rồi => bấm để BỎ assign; chưa có => mở modal chọn người
+          const assignBtnOnclick = `onclick="onAssignButtonClick('${t.taskId}', ${hasAssignee})"`;
+          const assignBtnTitle = hasAssignee ? 'Click to unassign' : 'Click to assign';
 
           const card = document.createElement('div');
           card.className = 'task-card';
@@ -157,11 +168,11 @@ async function loadTasks() {
                    onchange="toggleTask('${t.taskId}', this.checked)" title="Mark as done">
               <div class="task-name" onclick="toggleTaskName(this)" data-full="false" title="${safeFullName}">${safeFullName}</div>
               <div class="action-icons">
-                  <button class="btn-assign" ${assignBtnAttr}>
+                  <button class="btn-assign" ${assignBtnOnclick} title="${assignBtnTitle}">
                       👤 ${safeAssignLabel}
                   </button>
                   <button class="btn-delete" onclick="deleteTask('${t.taskId}')">Del</button>
-                  <button class="btn-edit" onclick="openAssignModal('${t.taskId}')">Edit</button>
+                  <button class="btn-edit" onclick="openEditOptions('${t.taskId}')">Edit</button>
               </div>
           `;
           list.appendChild(card);
@@ -224,6 +235,76 @@ function openAssignModal(taskId) {
     userHasMore = true;
     document.getElementById('user-list').innerHTML = '';
     fetchUsers();
+}
+
+// ===== EDIT: 2 lựa chọn (assign / task name) =====
+function openEditOptions(taskId) {
+    currentEditingTaskId = taskId;
+    // luôn mở ở view menu 2 lựa chọn
+    document.getElementById('edit-menu').style.display = 'block';
+    document.getElementById('edit-name-view').style.display = 'none';
+    document.getElementById('edit-modal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+}
+
+// Lựa chọn 1: sửa người được assign -> mở lại modal assign cũ
+function editAssigneeOption() {
+    const id = currentEditingTaskId;
+    closeEditModal();
+    openAssignModal(id);
+}
+
+// Lựa chọn 2: sửa tên task -> hiện ô nhập
+function editTaskNameOption() {
+    const task = tasksCache[currentEditingTaskId];
+    const input = document.getElementById('edit-task-name-input');
+    input.value = task ? task.taskName : '';
+    document.getElementById('edit-menu').style.display = 'none';
+    document.getElementById('edit-name-view').style.display = 'block';
+    input.focus();
+}
+
+async function saveTaskName() {
+    const newName = document.getElementById('edit-task-name-input').value;
+    if (!newName || newName.trim() === '') {
+        alert('Task name must not be empty.');
+        return;
+    }
+
+    const res = await fetch(`${API_URL}/task`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskId: currentEditingTaskId, taskName: newName })
+    });
+
+    if (res.status === 401 || res.status === 403) { forceLogout(); return; }
+
+    const data = await res.json();
+    if (!res.ok) { alert(data.error); return; }
+
+    closeEditModal();
+    loadTasks();
+}
+
+// ===== NÚT ASSIGN: bấm lần nữa để bỏ assign =====
+function onAssignButtonClick(taskId, hasAssignee) {
+    if (hasAssignee) {
+        if (confirm('Unassign this user?')) unassignTask(taskId);
+    } else {
+        openAssignModal(taskId);
+    }
+}
+
+async function unassignTask(taskId) {
+    await fetch(`${API_URL}/assign-task`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskId, assignEmail: '' })
+    });
+    loadTasks();
 }
 
 function closeModal() { document.getElementById('assign-modal').style.display = 'none'; }
