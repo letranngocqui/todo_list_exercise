@@ -175,7 +175,7 @@ const server = createServer(async (req, res) => {
           const newUser = { id: crypto.randomUUID(), email, password, status: 'invalid' };
           usersMap.set(email, newUser); // Lưu vào RAM ngay lập tức
 
-          // 4. Ghi nền xuống đĩa để không làm chậm request (< 0.5ms)
+          // 4. Ghi nền xuống đĩa
           setImmediate(() => appendUser(newUser));
 
           // 5. Lấy giao thức (http hoặc https do ngrok cung cấp)
@@ -250,7 +250,7 @@ const server = createServer(async (req, res) => {
               return sendJSON(403, { error: 'Account not verified. Please check your email!' });
           }
 
-          const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
+          const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '5m' });
           return sendJSON(200, { token, message: `Login successful!` });
       }
 
