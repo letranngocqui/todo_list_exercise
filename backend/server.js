@@ -11,7 +11,7 @@ const jwt = require('jsonwebtoken'); // npm install jsonwebtoken
 const nodemailer = require('nodemailer');
 
 // Đổi cách lấy Secret Key từ hardcode sang biến môi trường
-const JWT_SECRET = process.env.JWT_SECRET_KEY || 'fallback-secret';
+const JWT_SECRET = process.env.JWT_SECRET_KEY;
 const PORT = 3000;
 
 if (!process.env.JWT_SECRET_KEY) {
