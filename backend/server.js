@@ -316,7 +316,7 @@ const server = createServer(async (req, res) => {
           const idx = tasksList.findIndex(t => t.taskId === taskId);
           if (idx !== -1) tasksList.splice(idx, 1);
           saveTasks();
-          return sendJSON(200, { message: 'Đã xóa' });
+          return sendJSON(200, { message: 'Deleted task' });
       }
 
       if (req.method === 'PATCH' && pathname === '/api/task') {
