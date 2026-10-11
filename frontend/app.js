@@ -99,7 +99,7 @@ function forceLogout() {
     token = null;
     document.getElementById('task-container').style.display = 'none';
     document.getElementById('auth-container').style.display = 'block';
-    document.getElementById('error-msg').innerText = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+    document.getElementById('error-msg').innerText = 'Your session has expired. Please log in again.';
 }
 
 function logout() {
@@ -113,7 +113,7 @@ function logout() {
     // Dọn sạch form + báo cho người dùng
     document.getElementById('email').value = '';
     document.getElementById('password').value = '';
-    document.getElementById('error-msg').innerText = 'Bạn đã đăng xuất.';
+    document.getElementById('error-msg').innerText = 'You have been logged out.';
 }
 
 async function loadTasks() {
@@ -140,22 +140,21 @@ async function loadTasks() {
 
           // Hiển thị ĐẦY ĐỦ email người được assign (không cắt ngắn), có escape
           const hasAssignee = !!t.assignEmail;
-          const assignLabel = t.assignEmail || 'Chưa có';
+          const assignLabel = t.assignEmail || 'Unassigned';
           const safeAssignLabel = assignLabel
               .replace(/</g, '&lt;')
               .replace(/>/g, '&gt;');
 
           // Đã assign rồi => nút assign bị vô hiệu hoá, muốn đổi phải bấm Edit
           const assignBtnAttr = hasAssignee
-              ? 'disabled title="Đã assign — bấm Edit để đổi người nhận"'
+              ? 'disabled title="Assigned — click Edit to change the assignee."'
               : `onclick="openAssignModal('${t.taskId}')"`;
 
           const card = document.createElement('div');
           card.className = 'task-card';
           card.innerHTML = `
             <input type="checkbox" class="task-check" ${t.completed ? 'checked' : ''}
-                   onchange="toggleTask('${t.taskId}', this.checked)" title="Đánh dấu hoàn thành">
-              <!-- KHÔNG truyền tên task vào hàm nữa, mà giấu vào thuộc tính data-fullname -->
+                   onchange="toggleTask('${t.taskId}', this.checked)" title="Mark as done">
               <div class="task-name" onclick="toggleTaskName(this)" data-full="false" title="${safeFullName}">${safeFullName}</div>
               <div class="action-icons">
                   <button class="btn-assign" ${assignBtnAttr}>
@@ -168,12 +167,12 @@ async function loadTasks() {
           list.appendChild(card);
       });
     }catch (err) {
-        console.error("Lỗi khi load danh sách task:", err);
+        console.error("Error loading task list:", err);
     }
 }
 
 function toggleTaskName(el) {
-    // Bấm để mở rộng (xuống dòng, hiện đủ) / thu gọn (1 dòng + "..." khi tràn — do CSS)
+    // Bấm để mở rộng (xuống dòng, hiện đủ)
     const nextFull = el.getAttribute('data-full') !== 'true';
     el.setAttribute('data-full', nextFull ? 'true' : 'false');
     el.classList.toggle('expanded', nextFull);
@@ -212,7 +211,7 @@ async function toggleTask(taskId, isChecked) {
         return;
     }
     if (!res.ok) {
-        console.error('Lỗi cập nhật trạng thái task');
+        console.error('Failed to update task status');
         loadTasks(); // API lỗi -> render lại cho khớp dữ liệu thật
     }
 }

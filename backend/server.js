@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET_KEY || 'fallback-secret';
 const PORT = 3000;
 
 if (!process.env.JWT_SECRET_KEY) {
-    console.error('❌ Thiếu JWT_SECRET_KEY trong .env. Dừng khởi động.');
+    console.error('❌ Missing JWT_SECRET_KEY in .env. Startup aborted.');
     process.exit(1);
 }
 
@@ -35,7 +35,7 @@ const frontendDir = path.join(__dirname, '../frontend');
 // ==========================================
 // 1. IN-MEMORY DATABASE (HASH MAP - O(1) LOOKUP)
 // ==========================================
-// Sử dụng Map để tìm user không cần vòng lặp (Đạt chuẩn < 0.5ms)
+// Sử dụng Map để tìm user không cần vòng lặp
 const usersMap = new Map();     // Dùng để tra cứu bằng Email (khi login, sign-up)
 const usersByIdMap = new Map(); // THÊM MỚI: Dùng để tra cứu bằng ID (khi load task)
 const tasksList = [];
@@ -142,32 +142,32 @@ const server = createServer(async (req, res) => {
           // Email và Password phải là CHUỖI — nếu không, .trim() ném TypeError -> 500
           // (ví dụ body {"email":123})
           if (typeof email !== 'string' || typeof password !== 'string') {
-              return sendJSON(400, { error: 'Email và Password phải là chuỗi ký tự' });
+              return sendJSON(400, { error: 'Email and password must be strings.' });
           }
 
           // Kiểm tra thiếu dữ liệu (giờ đã chắc chắn là string nên .trim() an toàn)
           if (email.trim() === '' || password.trim() === '') {
-              return sendJSON(400, { error: 'Email và Password không được để trống' });
+              return sendJSON(400, { error: 'Email and password are required' });
           }
 
           // Validate định dạng email: có @, có tên miền có dấu chấm, không khoảng trắng
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-              return sendJSON(400, { error: 'Email không hợp lệ' });
+              return sendJSON(400, { error: 'Invalid email address.' });
           }
 
           // Chặn ký tự phá vỡ CSV (, \r \n) cho CẢ email và password — bảo vệ Database
           if (/[,\r\n]/.test(email) || /[,\r\n]/.test(password)) {
-              return sendJSON(400, { error: 'Email/Password không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
+              return sendJSON(400, { error: 'Email and password cannot contain commas (,) or newline characters.' });
           }
 
-          // 1. Kiểm tra Email Unique (Bằng Map mất 0.0001ms)
-          if (usersMap.has(email)) return sendJSON(409, { error: 'Email đã tồn tại!' });
+          // 1. Kiểm tra Email Unique
+          if (usersMap.has(email)) return sendJSON(409, { error: 'This email is already registered' });
 
           // 2. Ràng buộc Password
           // Bắt buộc 1 thường, 1 hoa, 1 ký tự đặc biệt (không phải chữ, không phải số), tổng >= 8
           const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/;
           if (!passRegex.test(password)) {
-              return sendJSON(400, { error: 'Password phải >= 8 kí tự, có hoa, thường và kí tự đặc biệt.' });
+              return sendJSON(400, { error: 'Password must be at least 8 characters and contain uppercase, lowercase, and special characters.' });
           }
 
           // 3. Tạo user với status 'invalid'
@@ -195,28 +195,28 @@ const server = createServer(async (req, res) => {
           const mailOptions = {
               from: process.env.GMAIL_USER,
               to: email, // Gửi tới email người dùng vừa nhập
-              subject: 'Xác thực tài khoản Todo List',
+              subject: 'Verify Your Todo List Account',
               html: `
                   <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
-                      <h3>Chào mừng bạn đến với Todo List!</h3>
-                      <p>Vui lòng click vào nút bên dưới để hoàn tất đăng ký tài khoản:</p>
+                      <h3>Welcome to Todo List!</h3>
+                      <p>Please click the button below to complete your account registration:</p>
                       <a href="${verifyLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Xác Thực Ngay</a>
-                      <p style="margin-top: 20px; font-size: 12px; color: #666;">Hoặc copy đường link này: ${verifyLink}</p>
+                      <p style="margin-top: 20px; font-size: 12px; color: #666;">Or copy and paste this link into your browser: ${verifyLink}</p>
                   </div>
               `
           };
 
           transporter.sendMail(mailOptions, (error, info) => {
               if (error) {
-                  console.error('Lỗi khi gửi email xác thực:', error.message || error);
-                  console.warn(`⚠️  Gửi mail thất bại. Dùng link thủ công: ${verifyLink}`);
+                  console.error('Error sending verification email:', error.message || error);
+                  console.warn(`⚠️  Unable to send the email. Please use the verification link below.: ${verifyLink}`);
               } else {
-                  console.log('Đã gửi email xác thực thành công tới:', email);
+                  console.log('Verification email sent successfully to:', email);
               }
           });
 
           const end = performance.now();
-          return sendJSON(201, { message: `Đăng ký thành công! Vui lòng kiểm tra email để verify. (Xử lý trong ${(end-start).toFixed(2)}ms)` });
+          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account.` });
       }
 
       // --- API: XÁC THỰC EMAIL (GET /api/verify) ---
@@ -233,9 +233,9 @@ const server = createServer(async (req, res) => {
                   saveUsers();
 
                   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                  return res.end('<h1>Xác thực thành công! Bạn có thể login.</h1>');
+                  return res.end('<h1>Verification successful! You can now log in.</h1>');
               }
-              return res.end('Email không tồn tại');
+              return res.end('Email address not found.');
           }
 
       // --- API: ĐĂNG NHẬP (POST /api/login) ---
@@ -245,15 +245,15 @@ const server = createServer(async (req, res) => {
 
           const user = usersMap.get(email); // Lấy O(1)
           if (!user || user.password !== password) {
-              return sendJSON(401, { error: 'Sai email hoặc mật khẩu' });
+              return sendJSON(401, { error: 'Incorrect email or password' });
           }
           if (user.status !== 'valid') {
-              return sendJSON(403, { error: 'Tài khoản chưa verify. Vui lòng kiểm tra email!' });
+              return sendJSON(403, { error: 'Account not verified. Please check your email!' });
           }
 
           const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
           const end = performance.now();
-          return sendJSON(200, { token, message: `Login thành công! (Xử lý trong ${(end-start).toFixed(2)}ms)` });
+          return sendJSON(200, { token, message: `Login successful!` });
       }
 
       // ==========================================
@@ -289,7 +289,7 @@ const server = createServer(async (req, res) => {
 
       // --- API: TASKS CRUD ---
       if (!currentUser && (pathname.startsWith('/api/task'))) {
-          return sendJSON(401, { error: 'Vui lòng đăng nhập' });
+          return sendJSON(401, { error: 'Please log in.' });
       }
 
       if (req.method === 'GET' && pathname === '/api/tasks') {
@@ -300,11 +300,11 @@ const server = createServer(async (req, res) => {
           const { taskName } = await getBody();
 
           if (!taskName || taskName.trim() === '') {
-              return sendJSON(400, { error: 'Tên task không được để trống' });
+              return sendJSON(400, { error: 'Task name is required' });
           }
 
           if (/[,\r\n]/.test(taskName)) {
-              return sendJSON(400, { error: 'Tên task không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
+              return sendJSON(400, { error: 'Task name must not contain commas (,) or newline characters.' });
           }
 
           const newTask = { taskId: crypto.randomUUID(), taskName, creatorId: currentUser.id, assignEmail: '', completed: false };
@@ -328,31 +328,31 @@ const server = createServer(async (req, res) => {
           if (task) {
               task.completed = !!completed;
               saveTasks();
-              return sendJSON(200, { message: 'Cập nhật thành công' });
+              return sendJSON(200, { message: 'Updated successfully!' });
           }
-          return sendJSON(404, { error: 'Không tìm thấy task' });
+          return sendJSON(404, { error: 'Task not found.' });
       }
 
       if (req.method === 'PATCH' && pathname === '/api/assign-task') {
-          if (!currentUser) return sendJSON(401, { error: 'Vui lòng đăng nhập' });
+          if (!currentUser) return sendJSON(401, { error: 'Please log in.' });
 
           const { taskId, assignEmail } = await getBody();
 
           if (assignEmail != null && /[,\r\n]/.test(assignEmail)) {
-              return sendJSON(400, { error: 'assignEmail không được chứa dấu phẩy (,) hoặc ký tự xuống dòng để bảo vệ Database' });
+              return sendJSON(400, { error: 'assignEmail must not contain commas (,) or newline characters.' });
           }
 
           if (assignEmail && !usersMap.has(assignEmail)) {
-              return sendJSON(400, { error: 'assignEmail không tồn tại' });
+              return sendJSON(400, { error: 'Assignee email not found.' });
           }
 
           const task = tasksList.find(t => t.taskId === taskId);
           if (task) {
               task.assignEmail = assignEmail;
               saveTasks();
-              return sendJSON(200, { message: 'Gán thành công' });
+              return sendJSON(200, { message: 'Assigned successfully!' });
           }
-          return sendJSON(404, { error: 'Không tìm thấy task' });
+          return sendJSON(404, { error: 'Task not found.' });
       }
 
       // 404
@@ -364,15 +364,15 @@ const server = createServer(async (req, res) => {
       // BẮT LỖI TẠI ĐÂY!
       // Nếu getBody bị reject vì JSON rác, nó sẽ bay thẳng xuống đây
       if (error.message === 'INVALID_JSON') {
-          return sendJSON(400, { error: 'JSON không hợp lệ' });
+          return sendJSON(400, { error: 'Invalid JSON.' });
       }
 
       // Bắt luôn mọi lỗi nghiêm trọng khác mà bạn chưa lường trước để bảo vệ Server
-      console.error('Lỗi Server (Đã được bắt):', error);
+      console.error('Server error:', error);
       if (!res.writableEnded) {
-          return sendJSON(500, { error: 'Lỗi hệ thống nội bộ (500)' });
+          return sendJSON(500, { error: 'Internal Server Error (500)' });
       }
     }
 });
 
-server.listen(PORT, () => console.log(`Server chạy tại http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
