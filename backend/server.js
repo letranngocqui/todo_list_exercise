@@ -85,9 +85,11 @@ function saveUsers() {
 
 // Hàm lưu lại toàn bộ file task
 function saveTasks() {
-    let data = 'taskId,taskName,creatorId,assignEmail,completed\n';
-    tasksList.forEach(t => data += `${t.taskId},${t.taskName},${t.creatorId},${t.assignEmail || ''},${t.completed ? 'true' : 'false'}\n`);
-    fs.writeFileSync(taskFile, data, 'utf8');
+    const lines = ['taskId,taskName,creatorId,assignEmail,completed'];
+    for (const t of tasksList) {
+        lines.push(`${t.taskId},${t.taskName},${t.creatorId},${t.assignEmail || ''},${t.completed ? 'true' : 'false'}`);
+    }
+    fs.writeFileSync(taskFile, lines.join('\n') + '\n', 'utf8');
 }
 
 // ==========================================
@@ -215,7 +217,7 @@ const server = createServer(async (req, res) => {
           });
 
           const end = performance.now();
-          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account. (Processed in ${end-start.toFixed(2)}ms` });
+          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account. (Processed in ${(end-start).toFixed(2)}) ms` });
       }
 
       // --- API: XÁC THỰC EMAIL (GET /api/verify) ---
