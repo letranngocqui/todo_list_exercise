@@ -260,11 +260,13 @@ const server = createServer(async (req, res) => {
       let currentUser = null;
       const authHeader = req.headers['authorization'];
       if (authHeader) {
-          try { currentUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); } catch (e) {}
+        try {
+          currentUser = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+        } catch (e) { }
       }
 
       // --- API: LẤY DANH SÁCH USERS CHO ASSIGN (GET /api/users) ---
-      // Hỗ trợ Search và Phân trang (Load 4 người 1 lúc)
+      // Hỗ trợ Search và Phân trang (Load 20 người 1 lúc)
       if (req.method === 'GET' && pathname === '/api/users') {
           if (!currentUser) return sendJSON(401, { error: 'Unauthorized' });
 

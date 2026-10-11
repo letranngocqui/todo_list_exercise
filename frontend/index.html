@@ -28,7 +28,7 @@
                 <button id="btn-logout" onclick="logout()">Logout</button>
             </div>
             <div class="task-input-group">
-                <input type="text" id="task-name" placeholder="Nhập tên task..." style="width: 70%;">
+                <input type="text" id="task-name" placeholder="Enter a task name..." style="width: 70%;">
                 <button onclick="addTask()">Add</button>
             </div>
         </div>
@@ -43,7 +43,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>
             <h3>Assign User</h3>
-            <input type="text" id="search-user" placeholder="Tìm email..." onkeyup="searchUsers()">
+            <input type="text" id="search-user" placeholder="Search email..." onkeyup="searchUsers()">
             <ul id="user-list"></ul>
             <button id="load-more-btn" onclick="loadMoreUsers()" style="display: none;">Show more</button>
         </div>
