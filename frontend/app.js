@@ -161,8 +161,8 @@ async function loadTasks() {
                   <button class="btn-assign" ${assignBtnAttr}>
                       👤 ${safeAssignLabel}
                   </button>
-                  <button class="btn-edit" onclick="openAssignModal('${t.taskId}')">Edit</button>
                   <button class="btn-delete" onclick="deleteTask('${t.taskId}')">Del</button>
+                  <button class="btn-edit" onclick="openAssignModal('${t.taskId}')">Edit</button>
               </div>
           `;
           list.appendChild(card);
