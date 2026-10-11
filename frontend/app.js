@@ -187,7 +187,7 @@ async function addTask() {
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskName: title })
     });
-    alert('Thêm task thành công!');
+
     document.getElementById('task-name').value = '';
     loadTasks();
 }
