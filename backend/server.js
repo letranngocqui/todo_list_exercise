@@ -139,7 +139,6 @@ const server = createServer(async (req, res) => {
 
       // --- API: ĐĂNG KÝ (POST /api/sign-up) ---
       if (req.method === 'POST' && pathname === '/api/sign-up') {
-          const start = performance.now(); // Đo thời gian
           const { email, password } = await getBody();
 
           // Email và Password phải là CHUỖI
@@ -215,8 +214,7 @@ const server = createServer(async (req, res) => {
               }
           });
 
-          const end = performance.now();
-          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account. (Processed in ${(end-start).toFixed(2)}) ms` });
+          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account.` });
       }
 
       // --- API: XÁC THỰC EMAIL (GET /api/verify) ---
@@ -276,7 +274,7 @@ const server = createServer(async (req, res) => {
 
           let results = [];
           // Lặp qua Map (với 1M data sẽ mất vài ms, nên có search)
-          for (const [email, user] of usersMap.entries()) {
+          for (const [email, user] of usersMap) {
               if (user.status === 'valid' && email.toLowerCase().includes(search)) {
                   results.push({ id: user.id, email: user.email });
               }
