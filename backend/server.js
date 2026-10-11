@@ -319,6 +319,7 @@ const server = createServer(async (req, res) => {
           return sendJSON(200, { message: 'Deleted task' });
       }
 
+      //  Dùng chung cho 2 việc đổi tên và đổi tick
       if (req.method === 'PATCH' && pathname === '/api/task') {
           const { taskId, completed, taskName } = await getBody();
           const task = tasksList.find(t => t.taskId === taskId);
@@ -336,7 +337,11 @@ const server = createServer(async (req, res) => {
           }
 
           // Cập nhật trạng thái done (nếu client gửi lên)
-          if (completed !== undefined) task.completed = !!completed;
+          if (completed !== undefined){
+            if (typeof completed !== 'boolean')
+              return sendJSON(400, { error: 'completed must be boolean' });
+            task.completed = completed;
+          }
 
           saveTasks();
           return sendJSON(200, { message: 'Updated successfully!' });
