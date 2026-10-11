@@ -19,7 +19,7 @@ if (!process.env.JWT_SECRET_KEY) {
     process.exit(1);
 }
 
-// Tạo transporter MỘT LẦN, dùng chung cho mọi request (không tạo lại mỗi lần signup)
+// Tạo transporter MỘT LẦN, dùng chung cho mọi request
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -37,11 +37,11 @@ const frontendDir = path.join(__dirname, '../frontend');
 // ==========================================
 // Sử dụng Map để tìm user không cần vòng lặp
 const usersMap = new Map();     // Dùng để tra cứu bằng Email (khi login, sign-up)
-const usersByIdMap = new Map(); // THÊM MỚI: Dùng để tra cứu bằng ID (khi load task)
 const tasksList = [];
 
 // Khởi tạo file tasks nếu chưa có
-if (!fs.existsSync(taskFile)) fs.writeFileSync(taskFile, 'taskId,taskName,creatorId,assignEmail,completed\n', 'utf8');
+if (!fs.existsSync(taskFile))
+  fs.writeFileSync(taskFile, 'taskId,taskName,creatorId,assignEmail,completed\n', 'utf8');
 
 // Load 1 triệu users vào RAM khi khởi động server
 console.time('Load 1M Users to RAM');
@@ -51,12 +51,9 @@ for (let i = 1; i < dbContent.length; i++) {
     const [id, email, password, statusRaw] = dbContent[i].split(',');
     const status = (statusRaw || '').trim();
 
-    // 1. Khai báo và tạo object userObj
     const userObj = { id, email, password, status };
 
-    // 2. Tái sử dụng userObj cho cả 2 Map
     usersMap.set(email, userObj);
-    usersByIdMap.set(id, userObj);
 }
 console.timeEnd('Load 1M Users to RAM');
 
@@ -65,19 +62,22 @@ const taskContent = fs.readFileSync(taskFile, 'utf8').split(/\r?\n/);
 for (let i = 1; i < taskContent.length; i++) {
     if (!taskContent[i]) continue;
     const [taskId, taskName, creatorId, assignEmail, completed] = taskContent[i].split(',');
-    tasksList.push({ taskId, taskName, creatorId, assignEmail: assignEmail || '', completed: completed === 'true' });
+  tasksList.push({
+    taskId, taskName, creatorId,
+    assignEmail: assignEmail || '',
+    completed: completed === 'true'
+  });
 }
 
-// Hàm ghi log user mới nhanh nhất (Append)
+// Hàm ghi log user mới dùng cho sign-up
 function appendUser(user) {
     fs.appendFileSync(dbFile, `${user.id},${user.email},${user.password},${user.status}\n`);
 }
 
-// Ghi lại TOÀN BỘ database từ RAM — dùng khi cần SỬA một dòng (không sinh dòng trùng).
-// Duyệt usersByIdMap để mỗi user ra đúng 1 dòng (trùng cũ tự động bị gộp).
+// Ghi lại TOÀN BỘ database từ RAM — dùng khi cần SỬA một dòng (verify invalid -> valid)
 function saveUsers() {
     const lines = ['id,email,password,status'];
-    for (const user of usersByIdMap.values()) {
+    for (const user of usersMap.values()) {
         lines.push(`${user.id},${user.email},${user.password},${user.status}`);
     }
     fs.writeFileSync(dbFile, lines.join('\n') + '\n', 'utf8');
@@ -173,7 +173,6 @@ const server = createServer(async (req, res) => {
           // 3. Tạo user với status 'invalid'
           const newUser = { id: crypto.randomUUID(), email, password, status: 'invalid' };
           usersMap.set(email, newUser); // Lưu vào RAM ngay lập tức
-          usersByIdMap.set(newUser.id, newUser); // THÊM MỚI: Cập nhật đồng thời vào Map ID
 
           // 4. Ghi nền xuống đĩa để không làm chậm request (< 0.5ms)
           setImmediate(() => appendUser(newUser));
@@ -216,7 +215,7 @@ const server = createServer(async (req, res) => {
           });
 
           const end = performance.now();
-          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account.` });
+          return sendJSON(201, { message: `Registration successful! Please check your email to verify your account. (Processed in ${end-start.toFixed(2)}ms` });
       }
 
       // --- API: XÁC THỰC EMAIL (GET /api/verify) ---
@@ -240,7 +239,6 @@ const server = createServer(async (req, res) => {
 
       // --- API: ĐĂNG NHẬP (POST /api/login) ---
       if (req.method === 'POST' && pathname === '/api/login') {
-          const start = performance.now();
           const { email, password } = await getBody();
 
           const user = usersMap.get(email); // Lấy O(1)
@@ -252,7 +250,6 @@ const server = createServer(async (req, res) => {
           }
 
           const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '24h' });
-          const end = performance.now();
           return sendJSON(200, { token, message: `Login successful!` });
       }
 

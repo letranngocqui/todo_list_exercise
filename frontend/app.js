@@ -130,7 +130,7 @@ async function loadTasks() {
       list.innerHTML = '';
 
       tasks.forEach(t => {
-        // Hiển thị ĐẦY ĐỦ tên task; việc thêm "..." khi tràn do CSS lo (width-based)
+        // Hiển thị ĐẦY ĐỦ tên task
         const safeFullName = t.taskName
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
