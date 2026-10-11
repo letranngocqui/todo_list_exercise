@@ -125,8 +125,9 @@ const server = createServer(async (req, res) => {
       const reqUrl = new URL(req.url, `http://${req.headers.host}`);
       const pathname = reqUrl.pathname;
 
-      // --- PHỤC VỤ GIAO DIỆN FRONTEND ---
-      if (req.method === 'GET' && (pathname === '/' || pathname.endsWith('.html') || pathname.endsWith('.css') || pathname.endsWith('.js'))) {
+      // --- PHỤC VỤ GIAO DIỆN FRONTEND --- (integrate)
+      if (req.method === 'GET' && (pathname === '/' || pathname.endsWith('.html')
+                                   || pathname.endsWith('.css') || pathname.endsWith('.js'))) {
           let filePath = path.join(frontendDir, pathname === '/' ? 'index.html' : pathname);
           if (fs.existsSync(filePath)) {
               const ext = path.extname(filePath);
@@ -141,8 +142,7 @@ const server = createServer(async (req, res) => {
           const start = performance.now(); // Đo thời gian
           const { email, password } = await getBody();
 
-          // Email và Password phải là CHUỖI — nếu không, .trim() ném TypeError -> 500
-          // (ví dụ body {"email":123})
+          // Email và Password phải là CHUỖI
           if (typeof email !== 'string' || typeof password !== 'string') {
               return sendJSON(400, { error: 'Email and password must be strings.' });
           }
@@ -167,8 +167,7 @@ const server = createServer(async (req, res) => {
 
           // 2. Ràng buộc Password
           // Bắt buộc 1 thường, 1 hoa, 1 ký tự đặc biệt (không phải chữ, không phải số), tổng >= 8
-          const passRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/;
-          if (!passRegex.test(password)) {
+          if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/.test(password)) {
               return sendJSON(400, { error: 'Password must be at least 8 characters and contain uppercase, lowercase, and special characters.' });
           }
 
