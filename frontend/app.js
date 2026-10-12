@@ -115,13 +115,16 @@ document.getElementById('task-name').addEventListener('keydown', (e) => {
     }
 });
 
-// Enter ở ô đổi tên task -> lưu luôn
+// Đổi tên task -> bằng enter
 document.getElementById('edit-task-name-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         saveTaskName();
     }
 });
+
+// Đổi tên task -> bằng nút save trên màn hình
+document.querySelector('#edit-name-view > button:first-of-type').addEventListener('click', saveTaskName);
 
 
 // HIỂN THỊ MÀN HÌNH TASK
@@ -258,7 +261,11 @@ function closeEditModal() {
     document.getElementById('edit-modal').style.display = 'none';
 }
 
+// Tắt màn hình edit
 document.querySelector('#edit-modal .close').addEventListener('click', closeEditModal);
+
+// Nhấn Cancel để tắt màn hình sau khi đổi task name
+document.querySelector('#edit-name-view > button:last-of-type').addEventListener('click', closeEditModal);
 
 // Lựa chọn 1: sửa người được assign -> mở lại modal assign cũ
 document.querySelector('#edit-menu > button:first-of-type').addEventListener('click', () => {

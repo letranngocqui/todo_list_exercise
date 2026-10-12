@@ -21,14 +21,14 @@
     </div>
 
     <!-- MÀN HÌNH TASK -->
-    <div id="task-container" style="display: none;">
+    <div id="task-container">
         <div class="header-task">
             <div class="header-row">
                 <h2>TASK</h2>
                 <button id="btn-logout">Logout</button>
             </div>
             <div class="task-input-group">
-                <input type="text" id="task-name" placeholder="Enter a task name..." style="width: 70%;">
+                <input type="text" id="task-name" placeholder="Enter a task name...">
                 <button id="add-task">Add</button>
             </div>
         </div>
@@ -54,19 +54,19 @@
         <div class="modal-content">
             <span class="close">&times;</span>
 
-            <!-- View 1: 2 lựa chọn -->
+            <!-- View hiển thị 2 lựa chọn -->
             <div id="edit-menu">
                 <h3>Edit Task</h3>
                 <button class="edit-option">Edit Assignee</button>
                 <button class="edit-option">Edit Task Name</button>
             </div>
 
-            <!-- View 2: ô sửa tên -->
-            <div id="edit-name-view" style="display: none;">
+            <!-- View đổi task name -->
+            <div id="edit-name-view">
                 <h3>Edit Task Name</h3>
                 <input type="text" id="edit-task-name-input" placeholder="New task name...">
-                <button onclick="saveTaskName()">Save</button>
-                <button onclick="closeEditModal()">Cancel</button>
+                <button>Save</button>
+                <button>Cancel</button>
             </div>
         </div>
     </div>

@@ -1,7 +1,7 @@
 /* frontend/style.css */
 body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
 #auth-container, #task-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; }
-#task-container { height: 80vh; display: flex; flex-direction: column; width: 600px; }
+#task-container {display: none;  height: 80vh; display: flex; flex-direction: column; width: 600px; }
 input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; }
 
 /* CSS Yêu cầu: Nút đè lên nhau, bo viền */
@@ -20,7 +20,7 @@ button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold;
 /* Thẻ Task */
 .task-card { display: flex; align-items: center; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 .task-check { width: 18px; height: 18px; margin-right: 10px; cursor: pointer; flex-shrink: 0; accent-color: #28a745; }
-.task-name { flex: 1; min-width: 0; cursor: pointer; font-weight: bold;
+.task-name { flex: 1; min-width: 0; width: 70%; cursor: pointer; font-weight: bold;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .task-name.expanded { white-space: normal; word-break: break-word; }
 .action-icons { display: flex; gap: 10px; flex-shrink: 0; }
@@ -50,3 +50,4 @@ button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold;
 /* Modal Edit: 2 lựa chọn xếp dọc */
 #edit-menu .edit-option { display: block; width: 100%; margin-top: 10px; background: #007bff; color: white; }
 #edit-name-view button { margin-top: 10px; }
+#edit-name-view {display: none}
