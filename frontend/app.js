@@ -129,16 +129,6 @@ document.getElementById('task-name').addEventListener('keydown', (e) => {
     }
 });
 
-// Đổi tên task -> bằng enter
-document.getElementById('edit-task-name-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        saveTaskName();
-    }
-});
-
-// Đổi tên task -> bằng nút save trên màn hình
-document.querySelector('#edit-name-view > button:first-of-type').addEventListener('click', saveTaskName);
-
 
 // HIỂN THỊ MÀN HÌNH TASK
 function showTaskScreen() {
@@ -306,6 +296,17 @@ async function saveTaskName() {
     closeEditModal();
     loadTasks();
 }
+
+// Đổi tên task -> bằng enter
+document.getElementById('edit-task-name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        saveTaskName();
+    }
+});
+
+// Đổi tên task -> bằng nút save trên màn hình
+document.querySelector('#edit-name-view > button:first-of-type').addEventListener('click', saveTaskName);
+
 
 // ===== NÚT ASSIGN: bấm lần nữa để bỏ assign =====
 function onAssignButtonClick(taskId, hasAssignee) {
