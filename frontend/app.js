@@ -1,15 +1,16 @@
 // frontend/app.js
-const API_URL = '/api';
 let currentMode = 'login';
 let token = localStorage.getItem('token');
-let currentAssigningTaskId = null;
+let currentAssigningTaskId = null;   // Task nào đang được bấm vào để assign
 let userPage = 1;
 const USER_PAGE_SIZE = 20;   // PHẢI khớp `limit` ở backend
-let userHasMore = true;      // còn dữ liệu để load tiếp?
+let userHasMore = true;      // Kiểm tra còn dữ liệu hay không
 let loadingUsers = false;    // chống bấm/gọi trùng khi đang tải
 
-const tasksCache = {};          // taskId -> task object (lấy tên hiện tại khi sửa)
-let currentEditingTaskId = null;
+// hứng toàn bộ task trước khi được render lên màn hình để dùng rename nếu muốn
+const tasksCache = {};
+
+let currentEditingTaskId = null;  // Task nào đang được bấm vào để edit
 
 // Logout
 document.getElementById('btn-logout').addEventListener('click', () => {
@@ -68,13 +69,22 @@ btnSignup.addEventListener('click', () => {
     }
 });
 
+// Enter ở ô Email/Password -> submit theo tab đang chọn (Login hoặc Sign Up)
+['email', 'password'].forEach((id) => {
+    document.getElementById(id).addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleAuth(currentMode);
+        }
+    });
+});
+
 async function handleAuth(mode) {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('error-msg');
 
     try {
-        const res = await fetch(`${API_URL}/${mode === 'login' ? 'login' : 'sign-up'}`, {
+        const res = await fetch(`/api/${mode === 'login' ? 'login' : 'sign-up'}`, {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
@@ -96,21 +106,10 @@ async function handleAuth(mode) {
 }
 
 
-// Enter ở ô Email/Password -> submit theo tab đang chọn (Login hoặc Sign Up)
-['email', 'password'].forEach((id) => {
-    document.getElementById(id).addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAuth(currentMode);   // currentMode là 'login' hoặc 'signup'
-        }
-    });
-});
-
-
 async function addTask() {
     const title = document.getElementById('task-name').value;
     if (!title) return;
-    await fetch(`${API_URL}/task`, {
+    await fetch(`/api/task`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskName: title })
@@ -120,13 +119,12 @@ async function addTask() {
     loadTasks();
 }
 
-// nhấn add -> thêm task
+// nhấn add trên màn hình -> thêm task
 document.getElementById('add-task').addEventListener('click', addTask);
 
-// Enter ở ô tên task -> thêm task
+// Enter ở ô task name -> thêm task
 document.getElementById('task-name').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-        e.preventDefault();
         addTask();
     }
 });
@@ -134,7 +132,6 @@ document.getElementById('task-name').addEventListener('keydown', (e) => {
 // Đổi tên task -> bằng enter
 document.getElementById('edit-task-name-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-        e.preventDefault();
         saveTaskName();
     }
 });
@@ -150,10 +147,10 @@ function showTaskScreen() {
     loadTasks();
 }
 
-// Render task lên màn hình
+// Render tasks lên màn hình
 async function loadTasks() {
     try{
-      const res = await fetch(`${API_URL}/tasks`, { headers: { 'Authorization': `Bearer ${token}` }});
+      const res = await fetch(`/api/tasks`, { headers: { 'Authorization': `Bearer ${token}` }});
 
       if (res.status === 401 || res.status === 403) {
           forceLogout();
@@ -208,7 +205,7 @@ async function loadTasks() {
 
 // Mark as Done
 async function toggleTask(taskId, isChecked) {
-    const res = await fetch(`${API_URL}/task`, {
+    const res = await fetch(`/api/task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId, completed: isChecked })
@@ -232,7 +229,7 @@ function toggleTaskName(el) {
 
 
 async function deleteTask(taskId) {
-    await fetch(`${API_URL}/task`, {
+    await fetch(`/api/task`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId })
@@ -295,7 +292,7 @@ async function saveTaskName() {
         return;
     }
 
-    const res = await fetch(`${API_URL}/task`, {
+    const res = await fetch(`/api/task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId: currentEditingTaskId, taskName: newName })
@@ -320,7 +317,7 @@ function onAssignButtonClick(taskId, hasAssignee) {
 }
 
 async function unassignTask(taskId) {
-    await fetch(`${API_URL}/assign-task`, {
+    await fetch(`/api/assign-task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId, assignEmail: '' })
@@ -340,7 +337,7 @@ async function fetchUsers(append = false) {
     try {
         const search = document.getElementById('search-user').value;
         const res = await fetch(
-            `${API_URL}/users?search=${encodeURIComponent(search)}&page=${userPage}`,
+            `/api/users?search=${encodeURIComponent(search)}&page=${userPage}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
         );
         const users = await res.json();
@@ -379,7 +376,7 @@ function searchUsers() {
 document.getElementById('search-user').addEventListener('keyup', searchUsers);
 
 async function assignUser(email) {
-    await fetch(`${API_URL}/assign-task`, {
+    await fetch(`/api/assign-task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId: currentAssigningTaskId, assignEmail: email })
