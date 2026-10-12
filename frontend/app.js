@@ -152,17 +152,17 @@ async function loadTasks() {
       list.innerHTML = '';
 
       tasks.forEach(t => {
-        tasksCache[t.taskId] = t;
-        // Hiển thị ĐẦY ĐỦ tên task
-        const safeFullName = t.taskName
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+          tasksCache[t.taskId] = t;
 
-          // Hiển thị ĐẦY ĐỦ email người được assign (không cắt ngắn), có escape
-          const hasAssignee = !!t.assignEmail;
+          // HTML escaping
+          const safeFullName = t.taskName
+              .replace(/&/g, '&amp;') // replace HTML special characters to HTML entities
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;');
+
+          const hasAssignee = !!t.assignEmail; // double bang: convert string to boolean
           const assignLabel = t.assignEmail || 'Unassigned';
           const safeAssignLabel = assignLabel
               .replace(/</g, '&lt;')
@@ -190,6 +190,15 @@ async function loadTasks() {
       });
     }catch (err) {
         console.error("Error loading task list:", err);
+    }
+}
+
+// ===== NÚT ASSIGN: bấm lần nữa để bỏ assign =====
+function onAssignButtonClick(taskId, hasAssignee) {
+    if (hasAssignee) {
+        if (confirm('Unassign this user?')) unassignTask(taskId);
+    } else {
+        openAssignModal(taskId);
     }
 }
 
@@ -307,15 +316,6 @@ document.getElementById('edit-task-name-input').addEventListener('keydown', (e) 
 // Đổi tên task -> bằng nút save trên màn hình
 document.querySelector('#edit-name-view > button:first-of-type').addEventListener('click', saveTaskName);
 
-
-// ===== NÚT ASSIGN: bấm lần nữa để bỏ assign =====
-function onAssignButtonClick(taskId, hasAssignee) {
-    if (hasAssignee) {
-        if (confirm('Unassign this user?')) unassignTask(taskId);
-    } else {
-        openAssignModal(taskId);
-    }
-}
 
 async function unassignTask(taskId) {
     await fetch(`/assign-task`, {
