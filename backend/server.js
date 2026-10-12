@@ -137,8 +137,8 @@ const server = createServer(async (req, res) => {
           }
       }
 
-      // --- API: ĐĂNG KÝ (POST /api/sign-up) ---
-      if (req.method === 'POST' && pathname === '/api/sign-up') {
+      // --- API: ĐĂNG KÝ (POST /sign-up) ---
+      if (req.method === 'POST' && pathname === '/sign-up') {
           const { email, password } = await getBody();
 
           // Email và Password phải là CHUỖI
@@ -185,7 +185,7 @@ const server = createServer(async (req, res) => {
           // 7. Tự động ghép lại thành link hoàn chỉnh
           //encodeURIComponent để các ký tự đặc biệt trong email (nhất là "+")
           //không bị query-string diễn giải sai (raw "+" bị hiểu thành dấu cách).
-          const verifyLink = `${protocol}://${host}/api/verify?email=${encodeURIComponent(email)}`;
+          const verifyLink = `${protocol}://${host}/verify?email=${encodeURIComponent(email)}`;
 
           // Phao cứu sinh cho demo: luôn in link ra terminal.
           // Mail lỗi / chưa cấu hình Gmail thì vẫn copy link này để verify tay.
@@ -199,7 +199,7 @@ const server = createServer(async (req, res) => {
                   <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto;">
                       <h3>Welcome to Todo List!</h3>
                       <p>Please click the button below to complete your account registration:</p>
-                      <a href="${verifyLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Xác Thực Ngay</a>
+                      <a href="${verifyLink}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Verify</a>
                       <p style="margin-top: 20px; font-size: 12px; color: #666;">Or copy and paste this link into your browser: ${verifyLink}</p>
                   </div>
               `
@@ -217,8 +217,8 @@ const server = createServer(async (req, res) => {
           return sendJSON(201, { message: `Registration successful! Please check your email to verify your account.` });
       }
 
-      // --- API: XÁC THỰC EMAIL (GET /api/verify) ---
-          if (req.method === 'GET' && pathname === '/api/verify') {
+      // --- API: XÁC THỰC EMAIL (GET /verify) ---
+          if (req.method === 'GET' && pathname === '/verify') {
               const email = reqUrl.searchParams.get('email');
               if (usersMap.has(email)) {
                   // Lấy user từ trong RAM ra
@@ -236,8 +236,8 @@ const server = createServer(async (req, res) => {
               return res.end('Email address not found.');
           }
 
-      // --- API: ĐĂNG NHẬP (POST /api/login) ---
-      if (req.method === 'POST' && pathname === '/api/login') {
+      // --- API: ĐĂNG NHẬP (POST /login) ---
+      if (req.method === 'POST' && pathname === '/login') {
           const { email, password } = await getBody();
 
           const user = usersMap.get(email); // Lấy O(1)
@@ -263,9 +263,9 @@ const server = createServer(async (req, res) => {
         } catch (e) { }
       }
 
-      // --- API: LẤY DANH SÁCH USERS CHO ASSIGN (GET /api/users) ---
+      // --- API: LẤY DANH SÁCH USERS CHO ASSIGN (GET /users) ---
       // Hỗ trợ Search và Phân trang (Load 20 người 1 lúc)
-      if (req.method === 'GET' && pathname === '/api/users') {
+      if (req.method === 'GET' && pathname === '/users') {
           if (!currentUser) return sendJSON(401, { error: 'Unauthorized' });
 
           const search = (reqUrl.searchParams.get('search') || '').toLowerCase();
@@ -285,15 +285,15 @@ const server = createServer(async (req, res) => {
           return sendJSON(200, paginated);
       }
 
-      if (!currentUser && (pathname.startsWith('/api/task'))) {
+      if (!currentUser && (pathname.startsWith('/task'))) {
           return sendJSON(401, { error: 'Please log in.' });
       }
 
-      if (req.method === 'GET' && pathname === '/api/tasks') {
+      if (req.method === 'GET' && pathname === '/tasks') {
           return sendJSON(200, tasksList);
       }
 
-      if (req.method === 'POST' && pathname === '/api/task') {
+      if (req.method === 'POST' && pathname === '/task') {
           const { taskName } = await getBody();
 
           if (!taskName || taskName.trim() === '') {
@@ -311,7 +311,7 @@ const server = createServer(async (req, res) => {
           return sendJSON(201, newTask);
       }
 
-      if (req.method === 'DELETE' && pathname === '/api/task') {
+      if (req.method === 'DELETE' && pathname === '/task') {
           const { taskId } = await getBody();
           const idx = tasksList.findIndex(t => t.taskId === taskId);
           if (idx !== -1) tasksList.splice(idx, 1);
@@ -320,7 +320,7 @@ const server = createServer(async (req, res) => {
       }
 
       //  Dùng chung cho 2 việc đổi tên và đổi tick
-      if (req.method === 'PATCH' && pathname === '/api/task') {
+      if (req.method === 'PATCH' && pathname === '/task') {
           const { taskId, completed, taskName } = await getBody();
           const task = tasksList.find(t => t.taskId === taskId);
           if (!task) return sendJSON(404, { error: 'Task not found.' });
@@ -347,7 +347,7 @@ const server = createServer(async (req, res) => {
           return sendJSON(200, { message: 'Updated successfully!' });
       }
 
-      if (req.method === 'PATCH' && pathname === '/api/assign-task') {
+      if (req.method === 'PATCH' && pathname === '/assign-task') {
           if (!currentUser) return sendJSON(401, { error: 'Please log in.' });
 
           const { taskId, assignEmail } = await getBody();

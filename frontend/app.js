@@ -84,7 +84,7 @@ async function handleAuth(mode) {
     const errorDiv = document.getElementById('error-msg');
 
     try {
-        const res = await fetch(`/api/${mode === 'login' ? 'login' : 'sign-up'}`, {
+        const res = await fetch(`/${mode === 'login' ? 'login' : 'sign-up'}`, {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
@@ -109,7 +109,7 @@ async function handleAuth(mode) {
 async function addTask() {
     const title = document.getElementById('task-name').value;
     if (!title) return;
-    await fetch(`/api/task`, {
+    await fetch(`/task`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskName: title })
@@ -140,7 +140,7 @@ function showTaskScreen() {
 // Render tasks lên màn hình
 async function loadTasks() {
     try{
-      const res = await fetch(`/api/tasks`, { headers: { 'Authorization': `Bearer ${token}` }});
+      const res = await fetch(`/tasks`, { headers: { 'Authorization': `Bearer ${token}` }});
 
       if (res.status === 401 || res.status === 403) {
           forceLogout();
@@ -195,7 +195,7 @@ async function loadTasks() {
 
 // Mark as Done
 async function toggleTask(taskId, isChecked) {
-    const res = await fetch(`/api/task`, {
+    const res = await fetch(`/task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId, completed: isChecked })
@@ -219,7 +219,7 @@ function toggleTaskName(el) {
 
 
 async function deleteTask(taskId) {
-    await fetch(`/api/task`, {
+    await fetch(`/task`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId })
@@ -282,7 +282,7 @@ async function saveTaskName() {
         return;
     }
 
-    const res = await fetch(`/api/task`, {
+    const res = await fetch(`/task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId: currentEditingTaskId, taskName: newName })
@@ -318,7 +318,7 @@ function onAssignButtonClick(taskId, hasAssignee) {
 }
 
 async function unassignTask(taskId) {
-    await fetch(`/api/assign-task`, {
+    await fetch(`/assign-task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId, assignEmail: '' })
@@ -338,7 +338,7 @@ async function fetchUsers(append = false) {
     try {
         const search = document.getElementById('search-user').value;
         const res = await fetch(
-            `/api/users?search=${encodeURIComponent(search)}&page=${userPage}`,
+            `/users?search=${encodeURIComponent(search)}&page=${userPage}`,
             { headers: { 'Authorization': `Bearer ${token}` } }
         );
         const users = await res.json();
@@ -377,7 +377,7 @@ function searchUsers() {
 document.getElementById('search-user').addEventListener('keyup', searchUsers);
 
 async function assignUser(email) {
-    await fetch(`/api/assign-task`, {
+    await fetch(`/assign-task`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ taskId: currentAssigningTaskId, assignEmail: email })
