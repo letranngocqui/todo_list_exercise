@@ -10,3 +10,6 @@ backend/task.csv
 
 # Bỏ qua file thực thi của ngrok
 ngrok.exe
+
+# Bỏ qua folder debug
+.zed
