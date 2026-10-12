@@ -1,7 +1,7 @@
 /* frontend/style.css */
 body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f0f2f5; }
 #auth-container, #task-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; }
-#task-container {display: none;  height: 80vh; display: flex; flex-direction: column; width: 600px; }
+#task-container {display: none;  height: 80vh; flex-direction: column; width: 600px; }
 input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; }
 
 /* CSS Yêu cầu: Nút đè lên nhau, bo viền */
@@ -15,6 +15,7 @@ button { padding: 12px; cursor: pointer; border-radius: 20px; font-weight: bold;
 /* Task CSS */
 .header-task { flex: 0 0 30%; border-bottom: 2px solid #eee; padding-bottom: 10px;}
 .task-input-group { display: flex; gap: 10px; }
+.task-input-group input { width: auto; flex: 0 0 65%; margin: 10px 0; }
 .body-task { flex: 1; overflow-y: auto; padding-top: 10px; }
 
 /* Thẻ Task */

@@ -95,7 +95,6 @@ async function handleAuth(mode) {
     }
 }
 
-// ===== NHẤN ENTER ĐỂ SUBMIT =====
 
 // Enter ở ô Email/Password -> submit theo tab đang chọn (Login hoặc Sign Up)
 ['email', 'password'].forEach((id) => {
@@ -106,6 +105,23 @@ async function handleAuth(mode) {
         }
     });
 });
+
+
+async function addTask() {
+    const title = document.getElementById('task-name').value;
+    if (!title) return;
+    await fetch(`${API_URL}/task`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskName: title })
+    });
+
+    document.getElementById('task-name').value = '';
+    loadTasks();
+}
+
+// nhấn add -> thêm task
+document.getElementById('add-task').addEventListener('click', addTask);
 
 // Enter ở ô tên task -> thêm task
 document.getElementById('task-name').addEventListener('keydown', (e) => {
@@ -134,7 +150,7 @@ function showTaskScreen() {
     loadTasks();
 }
 
-
+// Render task lên màn hình
 async function loadTasks() {
     try{
       const res = await fetch(`${API_URL}/tasks`, { headers: { 'Authorization': `Bearer ${token}` }});
@@ -190,6 +206,7 @@ async function loadTasks() {
     }
 }
 
+// Mark as Done
 async function toggleTask(taskId, isChecked) {
     const res = await fetch(`${API_URL}/task`, {
         method: 'PATCH',
@@ -206,27 +223,13 @@ async function toggleTask(taskId, isChecked) {
     }
 }
 
+// Scale task name
 function toggleTaskName(el) {
-    // Bấm để mở rộng (xuống dòng, hiện đủ)
     const nextFull = el.getAttribute('data-full') !== 'true';
     el.setAttribute('data-full', nextFull ? 'true' : 'false');
     el.classList.toggle('expanded', nextFull);
 }
 
-document.getElementById('add-task').addEventListener('click', addTask);
-
-async function addTask() {
-    const title = document.getElementById('task-name').value;
-    if (!title) return;
-    await fetch(`${API_URL}/task`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ taskName: title })
-    });
-
-    document.getElementById('task-name').value = '';
-    loadTasks();
-}
 
 async function deleteTask(taskId) {
     await fetch(`${API_URL}/task`, {
