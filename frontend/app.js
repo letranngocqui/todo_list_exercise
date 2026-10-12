@@ -11,7 +11,32 @@ let loadingUsers = false;    // chống bấm/gọi trùng khi đang tải
 const tasksCache = {};          // taskId -> task object (lấy tên hiện tại khi sửa)
 let currentEditingTaskId = null;
 
-// 1. CHUYỂN ĐỔI UI LOGIN / SIGNUP
+// Logout
+document.getElementById('btn-logout').addEventListener('click', () => {
+  localStorage.removeItem('token');
+  token = null;
+
+  // Quay lại màn hình đăng nhập / đăng ký
+  document.getElementById('task-container').style.display = 'none';
+  document.getElementById('auth-container').style.display = 'block';
+
+  // Dọn sạch form + báo cho người dùng
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('error-msg').innerText = 'You have been logged out.';
+});
+
+// Bắt buộc Logout khi token hết hạn
+function forceLogout() {
+    localStorage.removeItem('token');
+    token = null;
+    document.getElementById('task-container').style.display = 'none';
+    document.getElementById('auth-container').style.display = 'block';
+    document.getElementById('error-msg').innerText = 'Your session has expired. Please log in again.';
+}
+
+
+// CHUYỂN ĐỔI UI LOGIN / SIGNUP
 const btnLogin = document.getElementById('btn-login');
 const btnSignup = document.getElementById('btn-signup');
 
@@ -43,6 +68,33 @@ btnSignup.addEventListener('click', () => {
     }
 });
 
+async function handleAuth(mode) {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('error-msg');
+
+    try {
+        const res = await fetch(`${API_URL}/${mode === 'login' ? 'login' : 'sign-up'}`, {
+            method: 'POST',
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error);
+
+        if (mode === 'login') {
+            token = data.token;
+            localStorage.setItem('token', token);
+            showTaskScreen();
+        } else {
+            alert(data.message); // Báo yêu cầu verify
+        }
+        errorDiv.innerText = '';
+    } catch (err) {
+        errorDiv.innerText = err.message;
+    }
+}
+
 // ===== NHẤN ENTER ĐỂ SUBMIT =====
 
 // Enter ở ô Email/Password -> submit theo tab đang chọn (Login hoặc Sign Up)
@@ -71,61 +123,14 @@ document.getElementById('edit-task-name-input').addEventListener('keydown', (e) 
     }
 });
 
-async function handleAuth(mode) {
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('error-msg');
 
-    try {
-        const res = await fetch(`${API_URL}/${mode === 'login' ? 'login' : 'sign-up'}`, {
-            method: 'POST',
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.error);
-
-        if (mode === 'login') {
-            token = data.token;
-            localStorage.setItem('token', token);
-            showTaskScreen();
-        } else {
-            alert(data.message); // Báo yêu cầu verify
-        }
-        errorDiv.innerText = '';
-    } catch (err) {
-        errorDiv.innerText = err.message;
-    }
-}
-
-// 2. HIỂN THỊ MÀN HÌNH TASK
+// HIỂN THỊ MÀN HÌNH TASK
 function showTaskScreen() {
     document.getElementById('auth-container').style.display = 'none';
     document.getElementById('task-container').style.display = 'flex';
     loadTasks();
 }
 
-function forceLogout() {
-    localStorage.removeItem('token');
-    token = null;
-    document.getElementById('task-container').style.display = 'none';
-    document.getElementById('auth-container').style.display = 'block';
-    document.getElementById('error-msg').innerText = 'Your session has expired. Please log in again.';
-}
-
-function logout() {
-    localStorage.removeItem('token');
-    token = null;
-
-    // Quay lại màn hình đăng nhập / đăng ký
-    document.getElementById('task-container').style.display = 'none';
-    document.getElementById('auth-container').style.display = 'block';
-
-    // Dọn sạch form + báo cho người dùng
-    document.getElementById('email').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('error-msg').innerText = 'You have been logged out.';
-}
 
 async function loadTasks() {
     try{
@@ -182,12 +187,30 @@ async function loadTasks() {
     }
 }
 
+async function toggleTask(taskId, isChecked) {
+    const res = await fetch(`${API_URL}/task`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskId, completed: isChecked })
+    });
+    if (res.status === 401 || res.status === 403) {
+        forceLogout();
+        return;
+    }
+    if (!res.ok) {
+        console.error('Failed to update task status');
+        loadTasks(); // API lỗi -> render lại cho khớp dữ liệu thật
+    }
+}
+
 function toggleTaskName(el) {
     // Bấm để mở rộng (xuống dòng, hiện đủ)
     const nextFull = el.getAttribute('data-full') !== 'true';
     el.setAttribute('data-full', nextFull ? 'true' : 'false');
     el.classList.toggle('expanded', nextFull);
 }
+
+document.getElementById('add-task').addEventListener('click', addTask);
 
 async function addTask() {
     const title = document.getElementById('task-name').value;
@@ -211,21 +234,6 @@ async function deleteTask(taskId) {
     loadTasks();
 }
 
-async function toggleTask(taskId, isChecked) {
-    const res = await fetch(`${API_URL}/task`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ taskId, completed: isChecked })
-    });
-    if (res.status === 401 || res.status === 403) {
-        forceLogout();
-        return;
-    }
-    if (!res.ok) {
-        console.error('Failed to update task status');
-        loadTasks(); // API lỗi -> render lại cho khớp dữ liệu thật
-    }
-}
 
 function openAssignModal(taskId) {
     currentAssigningTaskId = taskId;
@@ -250,22 +258,25 @@ function closeEditModal() {
     document.getElementById('edit-modal').style.display = 'none';
 }
 
+document.querySelector('#edit-modal .close').addEventListener('click', closeEditModal);
+
 // Lựa chọn 1: sửa người được assign -> mở lại modal assign cũ
-function editAssigneeOption() {
-    const id = currentEditingTaskId;
-    closeEditModal();
-    openAssignModal(id);
-}
+document.querySelector('#edit-menu > button:first-of-type').addEventListener('click', () => {
+  const id = currentEditingTaskId;
+  closeEditModal();
+  openAssignModal(id);
+})
 
 // Lựa chọn 2: sửa tên task -> hiện ô nhập
-function editTaskNameOption() {
-    const task = tasksCache[currentEditingTaskId];
-    const input = document.getElementById('edit-task-name-input');
-    input.value = task ? task.taskName : '';
-    document.getElementById('edit-menu').style.display = 'none';
-    document.getElementById('edit-name-view').style.display = 'block';
-    input.focus();
-}
+document.querySelector('#edit-menu > button:last-of-type').addEventListener('click', () => {
+  const task = tasksCache[currentEditingTaskId];
+  const input = document.getElementById('edit-task-name-input');
+  input.value = task ? task.taskName : '';
+  document.getElementById('edit-menu').style.display = 'none';
+  document.getElementById('edit-name-view').style.display = 'block';
+  input.focus();
+})
+
 
 async function saveTaskName() {
     const newName = document.getElementById('edit-task-name-input').value;
@@ -309,6 +320,8 @@ async function unassignTask(taskId) {
 
 function closeModal() { document.getElementById('assign-modal').style.display = 'none'; }
 
+document.querySelector('#assign-modal .close').addEventListener('click', closeModal);
+
 async function fetchUsers(append = false) {
     if (loadingUsers) return;                 // đang tải thì bỏ qua
     if (append && !userHasMore) return;       // hết user thì thôi
@@ -341,17 +354,19 @@ async function fetchUsers(append = false) {
 }
 
 // Nút "Xem thêm": sang trang kế tiếp rồi nối vào danh sách
-function loadMoreUsers() {
-    if (!userHasMore || loadingUsers) return;
-    userPage++;
-    fetchUsers(true);
-}
+document.getElementById('load-more-btn').addEventListener('click', () => {
+  if (!userHasMore || loadingUsers) return;
+  userPage++;
+  fetchUsers(true);
+})
 
 function searchUsers() {
     userPage = 1;
     userHasMore = true;
     fetchUsers(false);
 }
+
+document.getElementById('search-user').addEventListener('keyup', searchUsers);
 
 async function assignUser(email) {
     await fetch(`${API_URL}/assign-task`, {

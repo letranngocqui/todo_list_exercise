@@ -25,11 +25,11 @@
         <div class="header-task">
             <div class="header-row">
                 <h2>TASK</h2>
-                <button id="btn-logout" onclick="logout()">Logout</button>
+                <button id="btn-logout">Logout</button>
             </div>
             <div class="task-input-group">
                 <input type="text" id="task-name" placeholder="Enter a task name..." style="width: 70%;">
-                <button onclick="addTask()">Add</button>
+                <button id="add-task">Add</button>
             </div>
         </div>
 
@@ -41,24 +41,24 @@
     <!-- MODAL ASSIGN USER -->
     <div id="assign-modal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <span class="close">&times;</span>
             <h3>Assign User</h3>
-            <input type="text" id="search-user" placeholder="Search email..." onkeyup="searchUsers()">
+            <input type="text" id="search-user" placeholder="Search email...">
             <ul id="user-list"></ul>
-            <button id="load-more-btn" onclick="loadMoreUsers()" style="display: none;">Show more</button>
+            <button id="load-more-btn">Show more</button>
         </div>
     </div>
 
     <!-- MODAL EDIT TASK: 2 lựa chọn -->
     <div id="edit-modal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeEditModal()">&times;</span>
+            <span class="close">&times;</span>
 
             <!-- View 1: 2 lựa chọn -->
             <div id="edit-menu">
                 <h3>Edit Task</h3>
-                <button class="edit-option" onclick="editAssigneeOption()">Edit Assignee</button>
-                <button class="edit-option" onclick="editTaskNameOption()">Edit Task Name</button>
+                <button class="edit-option">Edit Assignee</button>
+                <button class="edit-option">Edit Task Name</button>
             </div>
 
             <!-- View 2: ô sửa tên -->
