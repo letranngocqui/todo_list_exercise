@@ -13,3 +13,6 @@ ngrok.exe
 
 # Bỏ qua folder debug
 .zed
+
+# Bỏ qua spec
+spec_todo_list.pdf

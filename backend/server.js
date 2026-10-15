@@ -7,7 +7,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { createServer } = require('node:http');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
-const jwt = require('jsonwebtoken'); // npm install jsonwebtoken
+const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
 // Đổi cách lấy Secret Key từ hardcode sang biến môi trường
@@ -15,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET_KEY;
 const PORT = 3000;
 
 if (!process.env.JWT_SECRET_KEY) {
-    console.error('❌ Missing JWT_SECRET_KEY in .env. Startup aborted.');
+    console.error('Missing JWT_SECRET_KEY in .env. Startup aborted.');
     process.exit(1);
 }
 
@@ -273,7 +273,6 @@ const server = createServer(async (req, res) => {
           const limit = 20;
 
           let results = [];
-          // Lặp qua Map (với 1M data sẽ mất vài ms, nên có search)
           for (const [email, user] of usersMap) {
               if (user.status === 'valid' && email.toLowerCase().includes(search)) {
                   results.push({ id: user.id, email: user.email });

@@ -202,6 +202,26 @@ function onAssignButtonClick(taskId, hasAssignee) {
     }
 }
 
+async function unassignTask(taskId) {
+    await fetch(`/assign-task`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskId, assignEmail: '' })
+    });
+    loadTasks();
+}
+
+// Mở giao diện tìm assignee
+function openAssignModal(taskId) {
+    currentAssigningTaskId = taskId;
+    document.getElementById('assign-modal').style.display = 'block';
+    document.getElementById('search-user').value = '';
+    userPage = 1;
+    userHasMore = true;
+    document.getElementById('user-list').innerHTML = '';
+    fetchUsers();
+}
+
 // Mark as Done
 async function toggleTask(taskId, isChecked) {
     const res = await fetch(`/task`, {
@@ -226,7 +246,6 @@ function toggleTaskName(el) {
     el.classList.toggle('expanded', nextFull);
 }
 
-
 async function deleteTask(taskId) {
     await fetch(`/task`, {
         method: 'DELETE',
@@ -237,15 +256,6 @@ async function deleteTask(taskId) {
 }
 
 
-function openAssignModal(taskId) {
-    currentAssigningTaskId = taskId;
-    document.getElementById('assign-modal').style.display = 'block';
-    document.getElementById('search-user').value = '';
-    userPage = 1;
-    userHasMore = true;
-    document.getElementById('user-list').innerHTML = '';
-    fetchUsers();
-}
 
 // ===== EDIT: 2 lựa chọn (assign / task name) =====
 function openEditOptions(taskId) {
@@ -317,14 +327,6 @@ document.getElementById('edit-task-name-input').addEventListener('keydown', (e) 
 document.querySelector('#edit-name-view > button:first-of-type').addEventListener('click', saveTaskName);
 
 
-async function unassignTask(taskId) {
-    await fetch(`/assign-task`, {
-        method: 'PATCH',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ taskId, assignEmail: '' })
-    });
-    loadTasks();
-}
 
 function closeModal() { document.getElementById('assign-modal').style.display = 'none'; }
 
